@@ -1,0 +1,17 @@
+{
+  "segment taping area": {
+    "mIoU": 59.94,
+    "Dice": 73.81,
+    "num_samples": 119
+  },
+  "segment crack": {
+    "mIoU": 27.49,
+    "Dice": 40.15,
+    "num_samples": 156
+  },
+  "Overall": {
+    "mIoU": 41.53,
+    "Dice": 54.72,
+    "num_samples": 275
+  }
+}

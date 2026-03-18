@@ -1,0 +1,5 @@
+Split Counts (seed=42, 80/10/10)
+============================================================
+  taping        train= 948  val= 119  test= 119  total=1186
+  cracks        train=1240  val= 155  test= 156  total=1551
+  TOTAL         train=2188  val= 274  test= 275  total=2737

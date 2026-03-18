@@ -1,0 +1,11 @@
+torch
+torchvision
+transformers
+roboflow
+opencv-python
+numpy
+matplotlib
+scikit-learn
+Pillow
+tqdm
+pycocotools
