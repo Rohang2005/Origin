@@ -1,11 +1,3 @@
-"""
-prepare_data.py
----------------
-Loads both COCO-format datasets, converts annotations to binary PNG masks,
-pairs each image with its text prompt, performs an 80/10/10 train/val/test
-split (seed=42), and saves everything into the canonical folder structure.
-"""
-
 import json
 import os
 import random
@@ -29,7 +21,6 @@ SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
 
-# Roboflow download folder names (case-insensitive matching with glob).
 DATASET_CONFIGS = [
     {
         "name": "taping",
@@ -60,11 +51,6 @@ def find_coco_json(base_dir: Path) -> Path:
 
 
 def collect_images_from_roboflow_dir(base_dir: Path):
-    """
-    Roboflow COCO downloads may have train/valid/test sub-splits already.
-    We unify everything into a single pool so we can re-split ourselves.
-    Returns list of (coco_api, image_info_list, images_folder) tuples.
-    """
     results = []
     for sub in ["train", "valid", "test", ""]:
         candidate = base_dir / sub if sub else base_dir
@@ -82,10 +68,6 @@ def collect_images_from_roboflow_dir(base_dir: Path):
 
 
 def generate_mask(coco, img_info, images_folder: Path) -> np.ndarray:
-    """
-    Generate a binary mask for one image.
-    Supports both polygon and bbox-only annotations.
-    """
     h, w = img_info["height"], img_info["width"]
     ann_ids = coco.getAnnIds(imgIds=img_info["id"])
     anns = coco.loadAnns(ann_ids)
@@ -101,7 +83,6 @@ def generate_mask(coco, img_info, images_folder: Path) -> np.ndarray:
                     continue
                 except Exception:
                     pass
-        # Fallback: use bounding box to create filled rectangle mask
         if "bbox" in ann:
             x, y, bw, bh = [int(round(v)) for v in ann["bbox"]]
             mask[y : y + bh, x : x + bw] = 1
@@ -110,21 +91,16 @@ def generate_mask(coco, img_info, images_folder: Path) -> np.ndarray:
 
 
 def process_dataset(config: dict) -> list:
-    """
-    Process one Roboflow dataset: generate masks, collect (image_path, mask_path, prompt) tuples.
-    Returns the full list of samples before splitting.
-    """
+
     name = config["name"]
     prompt = config["prompt"]
     keywords = config["download_dir_keywords"]
 
     project_root = Path(".")
-    # Find the download directory by matching all keywords (case-insensitive)
     candidates = [
         d for d in project_root.iterdir()
         if d.is_dir() and all(kw.lower() in d.name.lower() for kw in keywords)
     ]
-    # Exclude our own output directory
     candidates = [d for d in candidates if d.name.lower() != "data"]
     if not candidates:
         raise FileNotFoundError(
@@ -138,7 +114,6 @@ def process_dataset(config: dict) -> list:
     if not groups:
         raise FileNotFoundError(f"No COCO annotations found in {base_dir}")
 
-    # Temporary staging area for this dataset
     tmp_images = OUTPUT_ROOT / name / "_all" / "images"
     tmp_masks = OUTPUT_ROOT / name / "_all" / "masks"
     tmp_images.mkdir(parents=True, exist_ok=True)
@@ -166,7 +141,6 @@ def process_dataset(config: dict) -> list:
                 continue
 
             mask_arr = generate_mask(coco, img_info, images_folder)
-            # Convert to 0/255 binary
             mask_arr = (mask_arr > 0).astype(np.uint8) * 255
 
             dst_img = tmp_images / fname
@@ -188,14 +162,10 @@ def process_dataset(config: dict) -> list:
 
 
 def split_and_save(name: str, samples: list) -> dict:
-    """
-    80/10/10 split with seed 42, copy files into train/val/test sub-folders.
-    Returns counts dict.
-    """
+
     random.shuffle(samples)
     train_val, test = train_test_split(samples, test_size=0.10, random_state=SEED)
     train, val = train_test_split(train_val, test_size=0.1111, random_state=SEED)
-    # 0.1111 of 0.90 ≈ 0.10 of total
 
     splits = {"train": train, "val": val, "test": test}
     counts = {}
@@ -215,7 +185,6 @@ def split_and_save(name: str, samples: list) -> dict:
 
         counts[split_name] = len(split_samples)
 
-    # Clean up temporary staging
     shutil.rmtree(str(OUTPUT_ROOT / name / "_all"), ignore_errors=True)
 
     return counts
@@ -239,7 +208,6 @@ def main() -> None:
             print(f"  ERROR processing {name}: {e}")
             raise
 
-    # ---- Print and save split counts ----
     print("\n" + "=" * 60)
     print("  SPLIT COUNTS")
     print("=" * 60)
