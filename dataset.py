@@ -1,11 +1,3 @@
-"""
-dataset.py
-----------
-PyTorch Dataset class for text-conditioned segmentation.
-Loads image/mask pairs from the canonical folder structure, preprocesses
-images through the CLIPSeg processor, and returns tensors ready for training.
-"""
-
 import os
 import sys
 from pathlib import Path
@@ -21,22 +13,6 @@ PROCESSOR_NAME = "CIDAS/clipseg-rd64-refined"
 
 
 class CLIPSegDataset(Dataset):
-    """
-    Unified dataset for text-conditioned image segmentation.
-
-    Parameters
-    ----------
-    image_dirs : list of Path
-        Directories containing source images (one per dataset/split).
-    mask_dirs : list of Path
-        Corresponding directories containing binary masks.
-    prompts : list of str
-        Text prompt for each directory (same order as image_dirs).
-    processor : CLIPSegProcessor
-        HuggingFace processor for CLIPSeg.
-    image_size : int
-        Target spatial size for masks (must match CLIPSeg input).
-    """
 
     def __init__(
         self,
@@ -68,22 +44,18 @@ class CLIPSegDataset(Dataset):
     def __getitem__(self, idx: int):
         img_path, mask_path, prompt = self.samples[idx]
 
-        # Load image as RGB
         image = Image.open(img_path).convert("RGB")
 
-        # Load mask as single-channel grayscale, resize to model input size
         mask = Image.open(mask_path).convert("L")
         mask = mask.resize((self.image_size, self.image_size), Image.NEAREST)
         mask_tensor = torch.from_numpy(np.array(mask, dtype=np.float32) / 255.0)
 
-        # Process image + text through CLIPSeg processor
         inputs = self.processor(
             text=[prompt],
             images=[image],
             padding="max_length",
             return_tensors="pt",
         )
-        # Squeeze the batch dimension added by the processor
         pixel_values = inputs["pixel_values"].squeeze(0)
         input_ids = inputs["input_ids"].squeeze(0)
         attention_mask = inputs["attention_mask"].squeeze(0)
@@ -106,10 +78,7 @@ def build_dataloader(
     num_workers: int = 0,
     image_size: int = 352,
 ) -> torch.utils.data.DataLoader:
-    """
-    Convenience function: builds a unified DataLoader for a given split
-    combining both taping and cracks datasets.
-    """
+
     processor = CLIPSegProcessor.from_pretrained(PROCESSOR_NAME)
 
     data_root = Path("data")
@@ -123,7 +92,6 @@ def build_dataloader(
     ]
     prompts = ["segment taping area", "segment crack"]
 
-    # Validate paths exist
     for d in image_dirs + mask_dirs:
         if not d.exists():
             raise FileNotFoundError(f"Expected directory not found: {d}")
@@ -142,7 +110,6 @@ def build_dataloader(
 
 
 if __name__ == "__main__":
-    # Quick smoke test
     print("Building train dataloader …")
     try:
         loader = build_dataloader("train", batch_size=2, shuffle=False)
