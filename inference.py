@@ -1,10 +1,3 @@
-"""
-inference.py
-------------
-Loads the best fine-tuned CLIPSeg checkpoint and runs inference on all
-test images for both prompts, saving binary PNG masks to predictions/.
-"""
-
 import os
 import random
 import sys
@@ -61,10 +54,6 @@ def slugify(prompt: str) -> str:
 
 @torch.no_grad()
 def run_inference(model, processor, device) -> int:
-    """
-    Run inference on all test images for both prompts.
-    Returns total number of predictions generated.
-    """
     PREDICTIONS_DIR.mkdir(parents=True, exist_ok=True)
     total = 0
 
@@ -104,7 +93,6 @@ def run_inference(model, processor, device) -> int:
             )
             logits = outputs.logits  # (1, H, W)
 
-            # Upsample to original image size
             logits = F.interpolate(
                 logits.unsqueeze(1),
                 size=(orig_h, orig_w),
@@ -112,11 +100,9 @@ def run_inference(model, processor, device) -> int:
                 align_corners=False,
             ).squeeze()
 
-            # Sigmoid → threshold → binary mask (0 or 255)
             prob = torch.sigmoid(logits).cpu().numpy()
             binary_mask = ((prob > 0.5) * 255).astype(np.uint8)
 
-            # Save with format: {image_id}__{prompt_slug}.png
             image_id = img_path.stem
             out_name = f"{image_id}__{slug}.png"
             Image.fromarray(binary_mask, mode="L").save(str(PREDICTIONS_DIR / out_name))
