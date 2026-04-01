@@ -1,10 +1,3 @@
-"""
-evaluate.py
------------
-Computes mIoU and Dice score on the test set for each prompt and overall.
-Saves results to results.json and prints a formatted table.
-"""
-
 import json
 import random
 import sys
@@ -64,7 +57,6 @@ def compute_dice(pred: np.ndarray, gt: np.ndarray) -> float:
 
 
 def evaluate_dataset(ds_config: dict) -> dict:
-    """Evaluate one dataset. Returns dict with iou_list and dice_list."""
     prompt = ds_config["prompt"]
     slug = slugify(prompt)
     img_dir = ds_config["test_images"]
@@ -99,7 +91,6 @@ def evaluate_dataset(ds_config: dict) -> dict:
         pred_mask = np.array(Image.open(pred_path).convert("L"))
         gt_mask = np.array(Image.open(gt_path).convert("L"))
 
-        # Resize prediction to match ground truth if sizes differ
         if pred_mask.shape != gt_mask.shape:
             pred_img = Image.fromarray(pred_mask)
             pred_img = pred_img.resize((gt_mask.shape[1], gt_mask.shape[0]), Image.NEAREST)
@@ -155,12 +146,10 @@ def main() -> None:
         "num_samples": len(all_ious),
     }
 
-    # ---- Save JSON ----
     with open(RESULTS_FILE, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\n  Results saved to {RESULTS_FILE}")
 
-    # ---- Print table ----
     print("\n  " + "-" * 56)
     print(f"  {'Prompt':<26s} {'mIoU':>8s} {'Dice':>8s} {'N':>6s}")
     print("  " + "-" * 56)
