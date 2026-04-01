@@ -1,11 +1,3 @@
-"""
-train.py
---------
-Fine-tunes CLIPSeg (CIDAS/clipseg-rd64-refined) on both drywall taping and
-crack datasets simultaneously using Binary Cross-Entropy loss, Adam optimizer,
-and saves the best checkpoint based on validation loss.
-"""
-
 import os
 import random
 import sys
@@ -21,10 +13,6 @@ from tqdm import tqdm
 from transformers import CLIPSegForImageSegmentation
 
 from dataset import build_dataloader
-
-# ────────────────────────────────────────────
-# Hyperparameters & configuration
-# ────────────────────────────────────────────
 SEED = 42
 LR = 1e-4
 EPOCHS = 20
@@ -35,7 +23,6 @@ CHECKPOINT_DIR = Path("checkpoints")
 
 
 def set_seed(seed: int = SEED) -> None:
-    """Fix all random seeds for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -45,7 +32,6 @@ def set_seed(seed: int = SEED) -> None:
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device):
-    """Run one training epoch. Returns average loss."""
     model.train()
     running_loss = 0.0
     count = 0
@@ -63,7 +49,6 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         )
         logits = outputs.logits  # (B, H, W)
 
-        # Resize logits to match mask size if needed
         if logits.shape[-2:] != masks.shape[-2:]:
             logits = F.interpolate(
                 logits.unsqueeze(1),
@@ -131,12 +116,10 @@ def main() -> None:
     if device.type == "cuda":
         print(f"  GPU    : {torch.cuda.get_device_name(0)}")
 
-    # ---- Data ----
     print("\nLoading datasets …")
     train_loader = build_dataloader("train", batch_size=BATCH_SIZE, shuffle=True, image_size=IMAGE_SIZE)
     val_loader = build_dataloader("val", batch_size=BATCH_SIZE, shuffle=False, image_size=IMAGE_SIZE)
 
-    # ---- Model ----
     print(f"\nLoading pretrained model: {MODEL_NAME}")
     try:
         model = CLIPSegForImageSegmentation.from_pretrained(MODEL_NAME)
@@ -163,7 +146,6 @@ def main() -> None:
 
         epoch_time = time.time() - epoch_start
 
-        # Save best checkpoint
         improved = ""
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -177,7 +159,6 @@ def main() -> None:
             f"time={epoch_time:.1f}s{improved}"
         )
 
-        # After first epoch, estimate total training time
         if epoch == 1:
             est_total = epoch_time * EPOCHS
             est_min = est_total / 60.0
