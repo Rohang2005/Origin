@@ -1,18 +1,10 @@
-"""
-visualize.py
-------------
-Generates side-by-side visualizations (Original | Ground Truth | Prediction)
-for 4 test images (2 per dataset — one good, one failure case each).
-Saves PNGs to visuals/ for direct use in the assignment report.
-"""
-
 import json
 import random
 import sys
 from pathlib import Path
 
 import matplotlib
-matplotlib.use("Agg")  # non-interactive backend for saving figures
+matplotlib.use("Agg") 
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
@@ -56,10 +48,6 @@ def compute_iou(pred: np.ndarray, gt: np.ndarray) -> float:
 
 
 def pick_best_and_worst(ds_config: dict):
-    """
-    Rank test images by IoU and return (best_path, worst_path) tuples
-    of (image_path, gt_path, pred_path, iou).
-    """
     prompt = ds_config["prompt"]
     slug = slugify(prompt)
     img_dir = ds_config["test_images"]
@@ -92,10 +80,10 @@ def pick_best_and_worst(ds_config: dict):
     scored.sort(key=lambda x: x[3])
 
     if len(scored) < 2:
-        return scored[:1] + scored[:1]  # duplicate if only one available
+        return scored[:1] + scored[:1]  
 
-    worst = scored[0]   # lowest IoU → failure case
-    best = scored[-1]   # highest IoU → good result
+    worst = scored[0]   
+    best = scored[-1]   
     return best, worst
 
 
@@ -170,7 +158,6 @@ def main() -> None:
             out_path=VISUALS_DIR / f"{name}_best.png",
         )
 
-        # Failure case
         make_visualization(
             *worst,
             prompt=prompt,
