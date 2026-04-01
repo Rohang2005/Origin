@@ -1,15 +1,3 @@
-"""
-run_all.py
-----------
-Master script that executes the entire pipeline end-to-end:
-  1. download_data.py   — fetch datasets from Roboflow
-  2. prepare_data.py    — convert to binary masks & split
-  3. train.py           — fine-tune CLIPSeg
-  4. inference.py       — generate predictions on test set
-  5. evaluate.py        — compute mIoU & Dice scores
-  6. visualize.py       — produce report-ready figures
-"""
-
 import subprocess
 import sys
 import time
@@ -25,7 +13,6 @@ STEPS = [
 
 
 def run_step(description: str, script: str) -> None:
-    """Run a single pipeline step as a subprocess."""
     print("\n" + "=" * 60)
     print(f"  {description}")
     print(f"  Script: {script}")
